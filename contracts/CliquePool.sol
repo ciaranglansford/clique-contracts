@@ -1,54 +1,88 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @title CliquePool - A simple Ether pooling contract for the Clique MVP
-/// @author 
-/// @notice Users can deposit ETH, and the contract owner can trigger a payout to a random participant
+/// @title CliquePool - Round-based ETH pooling with efficient participation tracking
+/// @notice Users send a fixed amount of ETH to join each round. The owner triggers payout to a random participant. The round resets after each payout.
+
 contract CliquePool {
-    address public immutable owner; // Deployer/owner of the contract
-    address[] public participants; // Dynamic array to store wallet address that deposit to pool
-    bool public isPayoutDone; // Ensures payout can only happen once per pool instance
+    address public immutable owner;
+    uint256 public immutable entryAmount;
+    uint256 public constant MAX_PARTICIPANTS = 10;
 
-    /// @notice Sets the deploy as the contract owner
-    constructor(){
+    uint256 public currentRound;
+    address[] private participants;
+    mapping(address => uint256) public lastJoinedRound;
+    bool public isRoundActive;
+
+     /// @notice Emitted when a payout is completed
+    event PayoutExecuted(uint256 round, address indexed winner, uint256 amount);
+
+    constructor(uint256 _entryAmount) {
+        require(_entryAmount > 0, "Entry amount must be > 0");
         owner = msg.sender;
+        entryAmount = _entryAmount;
+        isRoundActive = true;
+        currentRound = 1;
     }
 
-    /// @notice Anyone can send Ether to join the pool
-    /// @dev 'msg.sender' is the wallet calling the function, 'msg.value' is the ETH they send
+    /// @notice Join the current round by sending exactly the required ETH
     function joinPool() external payable {
-        require(msg.value > 0, "Must send ETH to join");
-        participants.push(msg.sender); //Record the sender's address
+        require(isRoundActive, "Round not active");
+        require(participants.length < MAX_PARTICIPANTS, "Round is full");
+        require(msg.value == entryAmount, "Incorrect ETH amount");
+        require(lastJoinedRound[msg.sender] < currentRound, "Already joined this round");
+
+        lastJoinedRound[msg.sender] = currentRound;
+        participants.push(msg.sender);
     }
 
-    /// @notice Get the total number of participants
-    function getParticipantCount() external view returns(uint256){
+    /// @notice Get total number of participants in current round
+    function getParticipantCount() external view returns (uint256) {
         return participants.length;
     }
 
-    /// @notice Only the owner can trigger payout
-    /// @dev Payout sends the entire balance to one randomly selected participant
+    /// @notice Get participant address at given index
+    function getParticipant(uint256 index) external view returns (address) {
+        require(index < participants.length, "Index out of bounds");
+        return participants[index];
+    }
+
+    /// @notice Owner triggers payout to random participant and resets the round
     function triggerPayout() external {
         require(msg.sender == owner, "Only owner can trigger payout");
-        require(participants.length > 0, "No participants to pay out");
-        require(!isPayoutDone, "Payout already completed");
+        require(isRoundActive, "Payout already in progress");
+        require(participants.length > 0, "No participants");
 
-        //insecure randomness for testing
-        uint256 randomIndex = uint256(
+        isRoundActive = false;
+
+        uint256 winnerIndex = uint256(
             keccak256(
-                abi.encodePacked(block.timestamp, block.prevrandao, participants.length)
+                abi.encodePacked(
+                    block.timestamp,
+                    block.prevrandao,
+                    address(this),
+                    participants.length
+                )
             )
         ) % participants.length;
 
-        address payable winner = payable(participants[randomIndex]);
-        isPayoutDone = true;
+        address payable winner = payable(participants[winnerIndex]);
+        uint256 payoutAmount = address(this).balance;
 
-        // Transfer the entire balance to the winner
-        winner.transfer(address(this).balance);
+        // Transfer the full balance to the winner
+        winner.transfer(payoutAmount);
+
+        // Emit winner event
+        emit PayoutExecuted(currentRound, winner, payoutAmount);
+
+        // Reset state for next round
+        delete participants;
+        currentRound++;
+        isRoundActive = true;
     }
 
-      /// @notice Fallback to receive ETH directly
+    /// @notice Prevent accidental ETH deposits
     receive() external payable {
-        participants.push(msg.sender); // If someone sends ETH directly, count them in
+        revert("Use joinPool()");
     }
 }
