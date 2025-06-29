@@ -81,6 +81,11 @@ contract CliquePool {
         isRoundActive = true;
     }
 
+    /// @notice return a list of participants
+    function getParticipants() external view returns (address[] memory) {
+    return participants;
+    }  
+
     /// @notice Prevent accidental ETH deposits
     receive() external payable {
         revert("Use joinPool()");

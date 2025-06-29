@@ -1,21 +1,18 @@
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
   console.log("🚀 Deploying CliquePool...");
 
-  // Get the contract factory (like a deploy blueprint)
-  const CliquePool = await hre.ethers.getContractFactory("CliquePool");
+  const entryAmount = ethers.parseEther("0.1"); // converts 0.1 ETH to wei
 
-  // Deploy the contract
-  const pool = await CliquePool.deploy();
+  const CliquePool = await ethers.getContractFactory("CliquePool");
+  const contract = await CliquePool.deploy(entryAmount);
+  await contract.waitForDeployment();
 
-  // Wait for deployment to be mined
-  await pool.waitForDeployment();
-
-  console.log(`✅ Deployed CliquePool to: ${pool.target}`);
+  console.log("✅ Contract deployed to:", contract.target);
 }
 
 main().catch((error) => {
   console.error("❌ Deployment failed:", error);
-  process.exitCode = 1;
+  process.exit(1);
 });
