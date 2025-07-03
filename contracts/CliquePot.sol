@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @title CliquePool - Round-based ETH pooling with efficient participation tracking
+/// @title CliquePot - Round-based ETH pooling with efficient participation tracking
 /// @notice Users send a fixed amount of ETH to join each round. The owner triggers payout to a random participant. The round resets after each payout.
 
-contract CliquePool {
+contract CliquePot {
     address public immutable owner;
     uint256 public immutable entryAmount;
     uint256 public constant MAX_PARTICIPANTS = 10;
@@ -26,7 +26,7 @@ contract CliquePool {
     }
 
     /// @notice Join the current round by sending exactly the required ETH
-    function joinPool() external payable {
+    function joinPot() external payable {
         require(isRoundActive, "Round not active");
         require(participants.length < MAX_PARTICIPANTS, "Round is full");
         require(msg.value == entryAmount, "Incorrect ETH amount");
@@ -88,6 +88,6 @@ contract CliquePool {
 
     /// @notice Prevent accidental ETH deposits
     receive() external payable {
-        revert("Use joinPool()");
+        revert("Use joinPot()");
     }
 }
