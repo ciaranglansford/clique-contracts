@@ -7,7 +7,7 @@ pragma solidity ^0.8.20;
 contract CliquePot {
     address public immutable owner;
     uint256 public immutable entryAmount;
-    uint256 public constant MAX_PARTICIPANTS = 10;
+    uint256 public immutable max_participants;
 
     uint256 public currentRound;
     address[] private participants;
@@ -17,10 +17,12 @@ contract CliquePot {
      /// @notice Emitted when a payout is completed
     event PayoutExecuted(uint256 round, address indexed winner, uint256 amount);
 
-    constructor(uint256 _entryAmount) {
+    constructor(uint256 _entryAmount, uint256 _max_participants) {
         require(_entryAmount > 0, "Entry amount must be > 0");
+        require(_max_participants > 1, "Requires 2 participants");
         owner = msg.sender;
         entryAmount = _entryAmount;
+        max_participants = _max_participants;
         isRoundActive = true;
         currentRound = 1;
     }
@@ -28,7 +30,7 @@ contract CliquePot {
     /// @notice Join the current round by sending exactly the required ETH
     function joinPot() external payable {
         require(isRoundActive, "Round not active");
-        require(participants.length < MAX_PARTICIPANTS, "Round is full");
+        require(participants.length < max_participants, "Round is full");
         require(msg.value == entryAmount, "Incorrect ETH amount");
         require(lastJoinedRound[msg.sender] < currentRound, "Already joined this round");
 
