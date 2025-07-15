@@ -1,12 +1,12 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("🚀 Deploying CliquePool...");
+  console.log("🚀 Deploying CliquePot...");
 
   const entryAmount = ethers.parseEther("0.1"); // converts 0.1 ETH to wei
 
-  const CliquePool = await ethers.getContractFactory("CliquePool");
-  const contract = await CliquePool.deploy(entryAmount);
+  const CliquePot = await ethers.getContractFactory("CliquePot");
+  const contract = await CliquePot.deploy(entryAmount);
   await contract.waitForDeployment();
 
   console.log("✅ Contract deployed to:", contract.target);
