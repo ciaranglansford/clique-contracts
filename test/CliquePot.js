@@ -6,11 +6,12 @@ describe("CliquePot", function () {
   let CliquePot, pot;
   let owner, user1, user2, user3, attacker;
   const entryAmount = ethers.parseEther("0.1");
+  const max_participants = 10;
 
   beforeEach(async () => {
     [owner, user1, user2, user3, attacker, ...others] = await ethers.getSigners();
     CliquePot = await ethers.getContractFactory("CliquePot");
-    pot = await CliquePot.connect(owner).deploy(entryAmount);
+    pot = await CliquePot.connect(owner).deploy(entryAmount, max_participants);
     await pot.waitForDeployment();
   });
 
@@ -18,6 +19,7 @@ describe("CliquePot", function () {
     it("should set the correct owner and entry amount", async () => {
       expect(await pot.owner()).to.equal(owner.address);
       expect(await pot.entryAmount()).to.equal(entryAmount);
+      expect(await pot.max_participants()).to.equal(max_participants);
     });
 
     it("should start with round 1 and active state", async () => {
@@ -57,7 +59,7 @@ describe("CliquePot", function () {
     });
 
     it("should reject join beyond max participants", async () => {
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < max_participants; i++) {
         await pot.connect(others[i]).joinPot({ value: entryAmount });
       }
       await expect(pot.connect(user1).joinPot({ value: entryAmount }))
@@ -86,7 +88,7 @@ describe("CliquePot", function () {
     });
 
     it("should revert payout with no participants", async () => {
-      const pot2 = await CliquePot.connect(owner).deploy(entryAmount);
+      const pot2 = await CliquePot.connect(owner).deploy(entryAmount, max_participants);
       await pot2.waitForDeployment();
       await expect(pot2.connect(owner).triggerPayout())
         .to.be.revertedWith("No participants");
