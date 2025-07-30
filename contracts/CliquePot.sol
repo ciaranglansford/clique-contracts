@@ -124,7 +124,8 @@ contract CliquePot {
     uint256 maxP,
     uint256 round,
     uint256 currentCount,
-    RoundState state
+    RoundState state,
+    uint256 balance
 ) {
     return (
         owner,
@@ -132,7 +133,8 @@ contract CliquePot {
         maxParticipants,
         currentRound,
         participants.length,
-        roundState
+        roundState,
+        address(this).balance
     );
 }
 
