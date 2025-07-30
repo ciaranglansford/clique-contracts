@@ -18,7 +18,7 @@ contract CliquePot {
     RoundState public roundState;
 
     /// @notice Emitted when a user joins the round
-    event Joined(uint256 round, address indexed participant);
+    event Joined(address indexed pot, address indexed participant, uint256 round);
 
     /// @notice Emitted when a payout is completed
     event PayoutExecuted(uint256 round, address indexed winner, uint256 amount);
@@ -45,7 +45,8 @@ contract CliquePot {
         lastJoinedRound[msg.sender] = currentRound;
         participants.push(msg.sender);
 
-        emit Joined(currentRound, msg.sender);
+        emit Joined(address(this), msg.sender, currentRound);
+
     }
 
     /// @notice Returns true if the current pot is full
@@ -76,7 +77,7 @@ contract CliquePot {
         require(roundState == RoundState.Active, "Payout already in progress");
         require(participants.length > 0, "No participants");
 
-        roundState = RoundState.PayingOut;
+        
 
         uint256 winnerIndex = _selectWinnerIndex();
         address payable winner = payable(participants[winnerIndex]);
@@ -85,7 +86,7 @@ contract CliquePot {
         // Safer ETH transfer
         (bool sent, ) = winner.call{value: payoutAmount}("");
         require(sent, "Transfer failed");
-
+        roundState = RoundState.PayingOut;
         emit PayoutExecuted(currentRound, winner, payoutAmount);
 
         _resetRound();
@@ -116,4 +117,23 @@ contract CliquePot {
         unchecked { currentRound++; }
         roundState = RoundState.Active;
     }
+
+    function getPotDetails() external view returns (
+    address potOwner,
+    uint256 entryAmt,
+    uint256 maxP,
+    uint256 round,
+    uint256 currentCount,
+    RoundState state
+) {
+    return (
+        owner,
+        entryAmount,
+        maxParticipants,
+        currentRound,
+        participants.length,
+        roundState
+    );
+}
+
 }

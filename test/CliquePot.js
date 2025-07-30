@@ -38,8 +38,9 @@ describe("CliquePot", function () {
     it("should emit Joined event", async () => {
       await expect(pot.connect(user1).joinPot({ value: entryAmount }))
         .to.emit(pot, "Joined")
-        .withArgs(1, user1.address);
+        .withArgs(pot.target, user1.address, 1);
     });
+
 
     it("should allow user to rejoin after payout", async () => {
       await pot.connect(user1).joinPot({ value: entryAmount });
