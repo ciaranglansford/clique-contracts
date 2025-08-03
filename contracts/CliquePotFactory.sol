@@ -15,7 +15,7 @@ contract CliquePotFactory {
     );
 
     function createPot(uint256 entryAmount, uint256 maxParticipants) external returns (address) {
-        CliquePot newPot = new CliquePot(entryAmount, maxParticipants);
+        CliquePot newPot = new CliquePot(entryAmount, maxParticipants, msg.sender);
         allPots.push(address(newPot));
         potsByUser[msg.sender].push(address(newPot));
 

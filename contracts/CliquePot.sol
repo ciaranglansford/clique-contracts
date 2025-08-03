@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 /// @title CliquePot - Round-based ETH pooling with efficient participation tracking
 /// @notice Users send a fixed amount of ETH to join each round. The owner triggers payout to a random participant. The round resets after each payout.
 
 
-contract CliquePot {
+contract CliquePot is ReentrancyGuard{
     address public immutable owner;
     uint256 public immutable entryAmount;
     uint256 public immutable maxParticipants;
@@ -23,11 +25,11 @@ contract CliquePot {
     /// @notice Emitted when a payout is completed
     event PayoutExecuted(uint256 round, address indexed winner, uint256 amount);
 
-    constructor(uint256 _entryAmount, uint256 _maxParticipants) {
+    constructor(uint256 _entryAmount, uint256 _maxParticipants, address _owner) {
         require(_entryAmount > 0, "Entry amount must be > 0");
         require(_maxParticipants > 1, "Requires at least 2 participants");
 
-        owner = msg.sender;
+        owner = _owner;
         entryAmount = _entryAmount;
         maxParticipants = _maxParticipants;
 
